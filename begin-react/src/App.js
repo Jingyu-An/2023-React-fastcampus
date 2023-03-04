@@ -13,7 +13,7 @@ function App() {
   }
   return (
     <Wrapper>
-      <Hello name={name} color={"red"}/>
+      <Hello name={name} color={"red"} isSpecial={true}/>
       <Hello color={"pink"}/>
     </Wrapper>
   );
