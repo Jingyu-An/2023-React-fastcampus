@@ -1,17 +1,33 @@
-import React, {useState} from "react";
+import React, {useReducer, useState} from "react";
+
+const reducer = (state, action) => {
+  
+  switch (action.type) {
+    case 'INCREAMENT':
+      return state + 1;
+    case 'DECREAMENT':
+      return state - 1;
+    default:
+      throw new Error(`Unknown action ${action.type}`);
+  }
+};
 
 const Counter = () => {
   
-  const [number, setNumber] = useState(0);
+  const [number, dispatch] = useReducer(reducer, 0);
   const onIncrease = () => {
-    setNumber(prev => prev + 1);
+    dispatch({
+      type: 'INCREAMENT',
+    });
   };
   
   const onDecrease = () => {
-    setNumber(prev => prev - 1);
+    dispatch({
+      type: 'DECREAMENT',
+    })
   };
   
-  return(
+  return (
     <div>
       <h1>{number}</h1>
       <button onClick={onIncrease}>+1</button>

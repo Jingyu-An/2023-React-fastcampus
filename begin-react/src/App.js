@@ -1,4 +1,4 @@
-import React, {useCallback, useMemo, useRef, useState} from "react";
+import React, {useCallback, useMemo, useReducer, useRef, useState} from "react";
 import './App.css';
 import UserList from "./UserList";
 import CreateUser from "./CreateUser";
@@ -8,86 +8,123 @@ const countActiveUsers = (users) => {
   return users.filter(user => user.active).length;
 };
 
-function App() {
-  const [inputs, setInputs] = useState({
+const initializeState = {
+  inputs: {
     username: '',
-    email   : ''
-  });
+    email   : '',
+  },
   
-  const {username, email} = inputs;
-  
-  const onChange = useCallback((e) => {
-    const {name, value} = e.target;
-    setInputs({
-      ...inputs,
-      [name]: value
-    })
-  },[inputs]);
-  
-  const [users, setUsers] = useState([
+  users: [
     {
       id      : 1,
       username: 'John',
-      email: 'john@example.com',
-      active: true
+      email   : 'john@example.com',
+      active  : true
     },
     {
       id      : 2,
       username: 'Jane',
       email   : 'jane@example.com',
-      active: false
+      active  : false
     },
     {
       id      : 3,
       username: 'Tim',
       email   : 'tim@example.com',
-      active: false
+      active  : false
     }
-  ]);
+  ]
+};
+
+function reducer(state, action) {
+  switch (action.type) {
+    case 'CHANGE_INPUT':
+      return {
+        ...state,
+        inputs: {
+          ...state.inputs,
+          [action.name]: action.value
+        }
+      }
+    case 'CREATE_USER':
+      return {
+        inputs: initializeState.inputs,
+        users : state.users.concat(action.user)
+      }
+    case 'TOGGLE_USER':
+      return {
+        ...state,
+        users: state.users.map(user =>
+          user.id === action.id
+            ? {...user, active: !user.active}
+            : user
+        )
+      };
+    case 'REMOVE_USER':
+      return {
+        ...state,
+        users: state.users.filter(user => user.id !== action.id)
+      }
+    default:
+      throw new Error('Unknown action type: ' + action.type);
+  }
+  return state;
+};
+
+function App() {
   
-  const nextID = useRef(4);
+  const [state, dispatch] = useReducer(reducer, initializeState)
+  const nextId = useRef(4);
+  
+  const {users} = state;
+  const {username, email} = state.inputs;
+  
+  const onChange = useCallback(e => {
+    const {name, value} = e.target;
+    
+    dispatch({
+      type: 'CHANGE_INPUT',
+      name,
+      value
+    });
+  }, []);
   
   const onCreate = useCallback(() => {
-    
-    const user = {
-      id: nextID.current,
-      username,
-      email
-    };
-    
-    setUsers(users => [...users, user]);
-    // setUsers(users.concat(user))
-    
-    nextID.current += 1;
-    setInputs({
-      username: '',
-      email   : ''
+    dispatch({
+      type: 'CREATE_USER',
+      user: {
+        id: nextId.current++,
+        username,
+        email
+      }
     })
-  },[username, email]);
-  
-  const onRemove = useCallback((id) => {
-    setUsers(users => users.filter(user => user.id !== id));
-  }, []);
+  }, [username, email]);
   
   const onToggle = useCallback((id) => {
-    setUsers(users => users.map(
-      user => user.id === id
-        ? { ...user, active: !user.active}
-        : user
-    ))
-  }, []);
+    dispatch({
+      type: 'TOGGLE_USER',
+      id
+    });
+  },[]);
   
-  const count = useMemo(() => countActiveUsers(users), [users]);
+  const onRemove = useCallback((id) => {
+    dispatch({
+      type: 'REMOVE_USER',
+      id
+    })
+  })
+  
+  const count = useMemo(() => countActiveUsers(users), [users])
   
   return (
     <>
       <CreateUser
         username={username}
         email={email}
-        onCreate={onCreate}
         onChange={onChange}
+        onCreate={onCreate}
       />
-      <UserList users={users} onRemove={onRemove} onToggle={onToggle}/>
+      <UserList users={users} onToggle={onToggle} onRemove={onRemove}/>
       <div>Active users: {count}</div>
     </>
   );
