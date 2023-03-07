@@ -1,5 +1,6 @@
 {
   "dependencies": {
-    "immer": "^9.0.19"
+    "immer": "^9.0.19",
+    "react-async": "^10.0.1"
   }
 }
